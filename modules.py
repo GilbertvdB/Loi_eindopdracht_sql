@@ -14,7 +14,6 @@ import sqlite3  # import voor toegang tot de database.
 from sqlite3 import Error  # database exception handeling.
 import os  # import om de file directory te controleren.
 import sys
-import eind_opdracht_1 as lib
 
 
 def start_up():
@@ -22,58 +21,87 @@ def start_up():
     global cur
 
     database_naam = "chinook.db"
-    conn = lib.verbinding_maken(database_naam)
+    conn = verbinding_maken(database_naam)
     cur = conn.cursor()
 
 
-def input_bestand():
-    bestand = "test.txt"
-    # bestand = input("Geef naam van het te importeren bestand: ")  # todo
-    if os.path.isfile(bestand):
-        # print("Bestand gevonden.")
-        return bestand
+def verbinding_maken(database_file):
+    """ Controleert of de database in de directory bestaat. Maakt daarna
+    een verbinding met de SQLite database aangegeven door de `db_file`.
+    Als het bestand niet bestaat, wordt het programma gestopt.
+    :param database_file: database file.
+    :return: connection object of None.
+    """
+    if os.path.isfile(database_file):
+        try:
+            conn = sqlite3.connect(database_file)
+            return conn
+        except Error as e:
+            print(e)
+        return None
+    else:  # Programma stoppen als het bestand niet bestaat.
+        print(f"{database_file} niet gevonden.")
+        sys.exit(1)
+
+
+def check_bestand():
+    """ Vraag de gebruiker de naam van de tekst bestand en controleer
+    of het een geldig bestand is.
+    :return: een geldige bestand naam. """
+    naam_bestand = input("Geef naam van het te importeren bestand: ")
+    if os.path.isfile(naam_bestand):
+        return naam_bestand
     else:
-        print("Bestaand niet gevonden")
+        print("Bestand niet gevonden.")
         sys.exit(1)
 
 
 def naam_playlist():
-    playlist = input("Geef naam van de playlist: ")  # todo
-    c = check_db(playlist)
-    if c is False:  # if check_db is false. playlist not yet in db.
-        return playlist
+    """ Vraag de gebruiker de naam van de playlist en controleer in
+    de database of het niet al bestaat en dus mogelijk voor gebruik.
+    :return: naam van de playlist. """
+    playlist_naam = input("Geef naam van de playlist: ")
+    c = check_in_db(playlist_naam)
+    if c is False:  # Playlist naam nog niet in gebruik.
+        return playlist_naam
     else:
-        print("Deze playlist bestaat al")
+        print("Deze playlist bestaat al.")
         sys.exit(1)
 
 
-def check_db(name_to_check):
-    # print(name_to_check)
-    cur.execute(f''' SELECT EXISTS( SELECT name FROM playlists WHERE name = '{name_to_check}') ''')
-    rows = cur.fetchone()
-    for x in rows:
-        if x == 1:  # name exists in database
+def check_in_db(playlist_naam):
+    """ Zoek in de database of de playlist naam gevonden kan worden.
+    :param playlist_naam: naam van de playlist.
+    :return: True als de naam bestaat, anders False. """
+    cur.execute(f''' SELECT EXISTS( SELECT name FROM playlists 
+                WHERE name = '{playlist_naam}') ''')
+    row = cur.fetchone()
+    for x in row:
+        if x == 1:
             return True
         else:
-            return False  # name does not exist yet in database
+            return False
 
 
-def get_last_id():
-    # find the last playlist id number
-    cur.execute('''SELECT PlaylistId FROM playlists
-                ORDER BY PlaylistId DESC''')
-    last_id = cur.fetchone()
-    return last_id[0]
-
-
-def add_playlist_naam():
-    # add the playlist name into the db table
-    new_id = get_last_id() + 1
-    pl_naam = naam_playlist()  # "Mijn Muziek"
-    cur.execute(f'''INSERT INTO playlists VALUES ({new_id}, '{pl_naam}') ''')
+def add_playlist_naam(playlist_naam):
+    """ Voeg de nieuwe playlist toe aan de tabel 'playlists' in de
+    database.
+    :param playlist_naam: naam van de playlist.
+    :return: naam van de playlist. """
+    cur.execute(f'''INSERT INTO playlists 
+                VALUES (NULL, '{playlist_naam}') ''')
     conn.commit()
 
-    return new_id, pl_naam
+
+def get_playlist_id(playlist_naam):
+    """ Retourneer de playlist id nummer uit de database.
+    :param playlist_naam: naam van de playlist.
+    :return: playlist id nummer.
+    """
+    cur.execute(f'''SELECT PlaylistId FROM playlists
+                WHERE name = '{playlist_naam}' ''')
+    playlist_id = cur.fetchone()
+    return playlist_id[0]
 
 
 def get_line(bestand):   # todo check from lines
@@ -100,7 +128,7 @@ def search_db(linez):
     return linez, info_list
 
 
-def add_the_tracks(info_lst, name_pl):
+def add_the_tracks(info_lst, pl_id):
     print("--- Start import van playlist ---")
     n_lis, i_lis = info_lst
     for y in i_lis:
@@ -108,23 +136,23 @@ def add_the_tracks(info_lst, name_pl):
         if len(y) == 1:
             # print(f"For {x} will be added to playlist")
             # add track function
-            add_track_to_playlist(y[0][2], name_pl)
+            add_track_to_playlist(y[0][2], pl_id)
         elif len(y) > 1:
             # print(f"For {x}:\nchoice menu goes here")
             # choice function
             # track_choice(x)
             # add track function
-            add_track_to_playlist(track_choice(y), name_pl)   # todo here
+            add_track_to_playlist(track_choice(y), pl_id)   # todo here
         else:
             print(f"--- Geen tracks gevonden voor {n_lis[x]} ---")
 
     print("--- Import van playlist gereed ---")
 
 
-def add_track_to_playlist(track_number, name_pl):
+def add_track_to_playlist(track_number, pname_id):
     # add song to the playlist by adding PlaylistID en trackID
     # insert new line into playlist_track
-    pl_id = name_pl[0]
+    pl_id = pname_id
     try:
         cur.execute(f'''INSERT INTO playlist_track VALUES ({pl_id}, {track_number}) ''')
         conn.commit()
@@ -157,13 +185,14 @@ def max_length_string(kolom):
 
 def main():
     start_up()
-    geldig_bestand = input_bestand()  # check of the txt. bestaat
-    # n_pl = naam_playlist()  # check op naam playlist
-    my_pl = add_playlist_naam()
+    geldig_bestand = check_bestand()  # check of the txt. bestaat
+    n_pl = naam_playlist()  # check op naam playlist
+    add_playlist_naam(n_pl)
+    pl_id = get_playlist_name_id(n_pl)
     # start import playlist
     lines = get_line(geldig_bestand)
     infos = search_db(lines)
-    add_the_tracks(infos, my_pl)
+    add_the_tracks(infos, pl_id)
 
     cur.close()
     conn.close()
