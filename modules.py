@@ -27,8 +27,8 @@ def start_up():
 
 def verbinding_maken(database_file):
     """ Controleert of de database in de directory bestaat. Maakt daarna
-    een verbinding met de SQLite database aangegeven door de `db_file`.
-    Als het bestand niet bestaat, wordt het programma gestopt.
+    een verbinding met de SQLite database. Als het bestand niet bestaat,
+     wordt het programma gestopt.
     :param database_file: database file.
     :return: connection object of None.
     """
@@ -44,6 +44,7 @@ def verbinding_maken(database_file):
         sys.exit(1)
 
 
+# bestand gerelateerd functies
 def check_bestand():
     """ Vraag de gebruiker de naam van de tekst bestand en controleer
     of het een geldig bestand is.
@@ -56,6 +57,7 @@ def check_bestand():
         sys.exit(1)
 
 
+# playlist gerelateerd functies
 def naam_playlist():
     """ Vraag de gebruiker de naam van de playlist en controleer in
     de database of het niet al bestaat en dus mogelijk voor gebruik.
@@ -101,50 +103,60 @@ def get_playlist_id(playlist_naam):
     cur.execute(f'''SELECT PlaylistId FROM playlists
                 WHERE name = '{playlist_naam}' ''')
     playlist_id = cur.fetchone()
+
     return playlist_id[0]
 
 
-def get_line(bestand):   # todo check from lines
+def get_lines(bestand):
+    """ Haal de lijnen uit `bestand` op als een lijst. Verwijder lege
+    lijnen die er tussen zitten en retourneer de lijst.
+    :param bestand: naam van het bestand.
+    :return: lijst zonder lege waarden.
+    """
     with open(bestand, 'r') as tekst:
-        lines = tekst.read().splitlines()
-        for empty_line in lines:  # remove empty strings
-            if empty_line == '':
-                lines.remove(empty_line)
+        lijst_lijnen = tekst.read().splitlines()
+        for lege_lijn in lijst_lijnen:
+            if lege_lijn == '':
+                lijst_lijnen.remove(lege_lijn)
+        return lijst_lijnen
 
-        return lines
 
-
-def search_db(linez):
-    # print(linez)
-    info_list = []
-    for words in linez:
+def zoek_worden(zoek_lijst):
+    """ Zoek in de database voor liedjes die woorden bevatten uit
+    `zoek_lijst`. Voeg het zoekresultaat in een nieuwe lijst toe.
+    :param zoek_lijst: lijst met woorden om te zoeken.
+    :return: de originele lijst en de nieuwe lijst.
+    """
+    info_lijst = []  # lege lijst om het zoekresultaat te bewaren
+    # zoek voor elke lijn de liedjes naam, artiest en id nummers.
+    for worden in zoek_lijst:
         cur.execute(f''' SELECT tracks.Name, artists.name, tracks.TrackId
                     FROM tracks
                     INNER JOIN albums ON albums.AlbumId = tracks.AlbumId
                     INNER JOIN artists ON albums.ArtistId = artists.ArtistId
-                    WHERE tracks.name LIKE "{words}%" ''')
-        info = cur.fetchall()  # is a list
-        info_list.append(info)
-    return linez, info_list
+                    WHERE tracks.name LIKE "{worden}%" ''')
+        info = cur.fetchall()
+        info_lijst.append(info)
+    return zoek_lijst, info_lijst
 
 
-def add_the_tracks(info_lst, pl_id):
+def import_playlist(lijst_info, playlist_id):  # TODO doorgaan met docstrings vanaf hier
+    """ Importeert """
     print("--- Start import van playlist ---")
-    n_lis, i_lis = info_lst
-    for y in i_lis:
-        x = i_lis.index(y)
+    naam, informatie = lijst_info
+    for y in informatie:
+        x = informatie.index(y)
+        naam_lied = y[0][2]
+
+        # maar 1 lied is gevonden voor de zoekterm
         if len(y) == 1:
-            # print(f"For {x} will be added to playlist")
-            # add track function
-            add_track_to_playlist(y[0][2], pl_id)
+            add_track_to_playlist(naam_lied, playlist_id)
+        # meerdere liedjes gevonden voor de zoekterm
         elif len(y) > 1:
-            # print(f"For {x}:\nchoice menu goes here")
-            # choice function
-            # track_choice(x)
-            # add track function
-            add_track_to_playlist(track_choice(y), pl_id)   # todo here
+            add_track_to_playlist(track_choice(y), playlist_id)
+        # geen liedjes zijn gevonden voor de zoekterm
         else:
-            print(f"--- Geen tracks gevonden voor {n_lis[x]} ---")
+            print(f"--- Geen tracks gevonden voor {naam[x]} ---")
 
     print("--- Import van playlist gereed ---")
 
@@ -156,8 +168,8 @@ def add_track_to_playlist(track_number, pname_id):
     try:
         cur.execute(f'''INSERT INTO playlist_track VALUES ({pl_id}, {track_number}) ''')
         conn.commit()
-    except Error as e:  # Unique or duplicate error in table
-        pass  # print(e)
+    except Error:  # Unique or duplicate error in table
+        pass
 
 
 def track_choice(x_l):
@@ -188,11 +200,11 @@ def main():
     geldig_bestand = check_bestand()  # check of the txt. bestaat
     n_pl = naam_playlist()  # check op naam playlist
     add_playlist_naam(n_pl)
-    pl_id = get_playlist_name_id(n_pl)
+    pl_id = get_playlist_id(n_pl)
     # start import playlist
-    lines = get_line(geldig_bestand)
-    infos = search_db(lines)
-    add_the_tracks(infos, pl_id)
+    lines = get_lines(geldig_bestand)
+    infos = zoek_worden(lines)
+    import_playlist(infos, pl_id)
 
     cur.close()
     conn.close()
