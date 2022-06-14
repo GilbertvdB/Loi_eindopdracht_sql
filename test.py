@@ -1,6 +1,6 @@
 """
 Auteur: G van der Biezen
-Naam bestand: eind_opdracht_2.py
+Naam bestand: test.py
 
 Het volgende programma print de top 10 albums uit van een database.
 Eerst wordt de verbinding gemaakt met een database. Vervolgens worden
@@ -14,7 +14,7 @@ Last update: 09/06/2021
 import sqlite3  # import voor toegang tot de database.
 from sqlite3 import Error  # database exception handeling.
 import os  # import om de file directory te controleren.
-import eind_opdracht_1 as lib
+import top10_albums as lib
 
 
 database_naam = "chinook.db"

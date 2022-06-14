@@ -1,6 +1,6 @@
 """
 Auteur: G van der Biezen
-Naam bestand: eind_opdracht_1.py
+Naam bestand: top10_albums.py
 
 Het volgende programma print de top 10 albums uit van een database.
 Eerst wordt de verbinding gemaakt met een database. Vervolgens worden
@@ -32,7 +32,7 @@ def verbinding_maken(db_file):
             print(e)
 
         return None
-    # programma stoppen als het bestand niet bestaat
+    # programma stoppen als het bestand niet bestaat.
     else:
         import sys
         print(f"{db_file} niet gevonden.")

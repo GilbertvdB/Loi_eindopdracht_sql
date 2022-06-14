@@ -1,4 +1,4 @@
-import eind_opdracht_1 as lib
+import top10_albums as lib
 
 
 # lib.cursor()
