@@ -37,8 +37,8 @@ def verbinding_maken(database_file):
     """
     if os.path.isfile(database_file):
         try:
-            conn = sqlite3.connect(database_file)
-            return conn
+            db_conn = sqlite3.connect(database_file)
+            return db_conn
         except Error as e:
             print(e)
         return None
@@ -149,11 +149,10 @@ def import_playlist(lijst_info, playlist_id):
     zoek_titel, informatie = lijst_info
     for list_info in informatie:
         x = informatie.index(list_info)
-        titel_lied = lijst_info[0][2]
 
         # Maar 1 titel is gevonden voor de zoekterm.
         if len(list_info) == 1:
-            add_track(titel_lied, playlist_id)
+            add_track(list_info[0][2], playlist_id)
         # Meerdere titels gevonden voor de zoekterm.
         elif len(list_info) > 1:
             add_track(track_keuze(list_info), playlist_id)

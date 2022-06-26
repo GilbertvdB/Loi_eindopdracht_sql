@@ -11,9 +11,9 @@ IDE: IntelliJ IDEA Community Edition 2021.3.2
 Last update: 09/06/2021
 """
 
-import sqlite3  # import voor toegang tot de database.
-from sqlite3 import Error  # database exception handeling.
-import os  # import om de file directory te controleren.
+import sqlite3  # Import voor toegang tot de database.
+from sqlite3 import Error  # Database exception handeling.
+import os  # Import om de file directory te controleren.
 
 
 def verbinding_maken(db_file):
@@ -23,7 +23,7 @@ def verbinding_maken(db_file):
     :param db_file: database file.
     :return: connection object of None.
     """
-    # verbinding maken als het bestand bestaat.
+    # Verbinding maken als het bestand bestaat.
     if os.path.isfile(db_file):
         try:
             conn = sqlite3.connect(db_file)
@@ -32,7 +32,7 @@ def verbinding_maken(db_file):
             print(e)
 
         return None
-    # programma stoppen als het bestand niet bestaat.
+    # Programma stoppen als het bestand niet bestaat.
     else:
         import sys
         print(f"{db_file} niet gevonden.")
@@ -43,7 +43,7 @@ def cursor():
     """ Maakt een cursor door eerst verbinding te maken met de database."""
     database_naam = "chinook.db"
     conn = verbinding_maken(database_naam)
-    return conn.cursor()  # cursor om de database te benaderen.
+    return conn.cursor()  # Cursor om de database te benaderen.
 
 
 def gegevens_database():
@@ -51,9 +51,9 @@ def gegevens_database():
     en het aantal liedjes. Retourneert de eerste 10 regels in aflopend
     volgorde.
     :return: Een lijst van 10 regels. """
-    cur = cursor()  # cursor om de database te benaderen.
+    cur = cursor()
 
-    # vraag de database voor de gewenste gegevens, artist, albums en aantal.
+    # Vraag de database voor de gewenste gegevens, artist, albums en aantal.
     cur.execute('''SELECT artists.Name, albums.Title, COUNT(*)
                 FROM invoice_items
                 INNER JOIN tracks ON tracks.TrackId = invoice_items.TrackId
@@ -62,7 +62,7 @@ def gegevens_database():
                 GROUP BY albums.Title
                 ORDER BY COUNT(*) DESC''')
 
-    # sla de opgehaalde data op voor de eerste 10 regels.
+    # Sla de opgehaalde data op voor de eerste 10 regels.
     top_lijst = cur.fetchmany(10)
     return top_lijst
 
@@ -71,13 +71,13 @@ def spacing_padding():
     """ Haal de maximale string lengte voor de kolom artist en albums
     gebaseerd op de langste word zodat de geprinte data leesbaar is.
     :return: de maximale string lengte voor artist en album."""
-    len_art = 0  # lengte van de langste artiest naam in het lijst.
-    len_tit = 0  # lengte van de langste album titel in het lijst.
+    len_art = 0  # Lengte van de langste artiest naam in het lijst.
+    len_tit = 0  # Lengte van de langste album titel in het lijst.
     top10_lijst = gegevens_database()
     # Vergelijk elke regel met elkaar en slaat de langste lengte op.
     for string_lengte in top10_lijst:
         if len(string_lengte[0]) > len_art:
-            len_art = len(string_lengte[0]) + 4  # +4 is de lengte van een tab
+            len_art = len(string_lengte[0]) + 4  # Lengte tab is +4.
         elif len(string_lengte[1]) > len_tit:
             len_tit = len(string_lengte[1]) + 4
     return len_art, len_tit
@@ -86,7 +86,7 @@ def spacing_padding():
 def top10_albums():
     """ Print the top 10 albums uit met de meest beluisterde liedjes."""
     top_10_lijst = gegevens_database()
-    positie = 0  # nummering voor de posities in de top 10 list.
+    positie = 0  # Nummering voor de posities in de top 10 list.
     len_art, len_tit = spacing_padding()
     print("Top 10 Albums")
     print("-------------")
